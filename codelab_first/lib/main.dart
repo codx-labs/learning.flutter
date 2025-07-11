@@ -1,5 +1,6 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -13,17 +14,47 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => MyAppState(),
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'Namer App',
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         ),
-        home: MyHomePage(),
+        routerConfig: _router,
       ),
     );
   }
 }
+
+// Config go_router
+final GoRouter _router = GoRouter(
+  // First route to show when the app starts
+  initialLocation: '/',
+  routes: <RouteBase>[
+    // Main route with a ShellRoute
+    ShellRoute(
+      builder: (BuildContext context, GoRouterState state, Widget child) {
+        return MyHomePage(child: child);
+      },
+      routes: <RouteBase>[
+        // Route for the main generator page
+        GoRoute(
+          path: '/',
+          name: 'home',
+          builder: (BuildContext context, GoRouterState state) =>
+              GeneratorPage(),
+        ),
+        // Route for the favorites page
+        GoRoute(
+          path: '/favorites',
+          name: 'favorites',
+          builder: (BuildContext context, GoRouterState state) =>
+              FavoritesPage(),
+        ),
+      ],
+    ),
+  ],
+);
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
@@ -58,32 +89,51 @@ class MyAppState extends ChangeNotifier {
 }
 
 class MyHomePage extends StatefulWidget {
+  final Widget child;
+
+  const MyHomePage({super.key, required this.child});
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  var selectedIndex = 0;
+  // Define a function to calculate the selected index based on the current route
+  int _calculateSelectedIndex(BuildContext context) {
+    final String location = GoRouterState.of(context).uri.path;
+    if (location == '/') {
+      return 0;
+    }
+    if (location == '/favorites') {
+      return 1;
+    }
+    return 0;
+  }
+
+  // Function to handle item taps in the navigation bar
+  void _onItemTapped(int index) {
+    switch (index) {
+      case 0:
+        // Go to the main page
+        context.goNamed('home');
+      case 1:
+        // Go to the favorites page
+        context.go('/favorites');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     var colorScheme = Theme.of(context).colorScheme;
 
-    Widget page;
-    switch (selectedIndex) {
-      case 0:
-        page = GeneratorPage();
-      case 1:
-        page = FavoritesPage();
-      default:
-        throw UnimplementedError('no widget for $selectedIndex');
-    }
+    // Получаем текущий индекс выбранной страницы
+    final selectedIndex = _calculateSelectedIndex(context);
 
     var mainArea = ColoredBox(
       color: colorScheme.surfaceContainerHighest,
       child: AnimatedSwitcher(
         duration: Duration(milliseconds: 200),
-        child: page,
+        child: widget.child, // Отображаем дочерний виджет из маршрута
       ),
     );
 
@@ -91,6 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 450) {
+            // Мобильная версия с нижней навигацией
             return Column(
               children: [
                 Expanded(child: mainArea),
@@ -107,16 +158,13 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                     currentIndex: selectedIndex,
-                    onTap: (value) {
-                      setState(() {
-                        selectedIndex = value;
-                      });
-                    },
+                    onTap: _onItemTapped,
                   ),
                 ),
               ],
             );
           } else {
+            // Десктопная версия с боковой навигацией
             return Row(
               children: [
                 SafeArea(
@@ -133,11 +181,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                     selectedIndex: selectedIndex,
-                    onDestinationSelected: (value) {
-                      setState(() {
-                        selectedIndex = value;
-                      });
-                    },
+                    onDestinationSelected: _onItemTapped,
                   ),
                 ),
                 Expanded(child: mainArea),
