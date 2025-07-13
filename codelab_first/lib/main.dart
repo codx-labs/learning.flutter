@@ -126,14 +126,14 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     var colorScheme = Theme.of(context).colorScheme;
 
-    // Получаем текущий индекс выбранной страницы
+    // Get current selected page index
     final selectedIndex = _calculateSelectedIndex(context);
 
     var mainArea = ColoredBox(
       color: colorScheme.surfaceContainerHighest,
       child: AnimatedSwitcher(
         duration: Duration(milliseconds: 200),
-        child: widget.child, // Отображаем дочерний виджет из маршрута
+        child: widget.child, // Display child widget from route
       ),
     );
 
@@ -141,7 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 450) {
-            // Мобильная версия с нижней навигацией
+            // Mobile version with bottom navigation
             return Column(
               children: [
                 Expanded(child: mainArea),
@@ -164,7 +164,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
             );
           } else {
-            // Десктопная версия с боковой навигацией
+            // Desktop version with side navigation
             return Row(
               children: [
                 SafeArea(
